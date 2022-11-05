@@ -144,7 +144,7 @@ def main():
         collect.py [--context=64 --batch=16 --localRank=-1] <adapterfile> <modelConfig> <corpDir> <testSet> <outPath>
 
     Arguments:
-        <adapterfile> = string of adapter name, or a list of string of different adpaters
+        <adapterfile> = adpter config path, source e.g., AdapterHub/bert-base-uncased-pf-emotion  hf
         <modelConfig> = path to file with model name, number of layers, and layer dimensionality (space-separated)    
         <corpDir> = path to corpus or corpus directory (iterates through files)
         <testSet> = path to file with one target per line
