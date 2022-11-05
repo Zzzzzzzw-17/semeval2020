@@ -14,6 +14,7 @@ from gensim import utils as gensim_utils
 logger = logging.getLogger(__name__)
 
 
+
 class PathLineSentences(object):
     """Like :class:`~gensim.models.word2vec.LineSentence`, but process all files in a directory
     in alphabetical order by filename.
@@ -140,7 +141,7 @@ def main():
     args = docopt("""Collect BERT representations from corpus.
 
     Usage:
-        collect.py [--context=64 --batch=64 --localRank=-1] <modelConfig> <corpDir> <testSet> <outPath>
+        collect.py [--context=64 --batch=16 --localRank=-1] <modelConfig> <corpDir> <testSet> <outPath>
 
     Arguments:
         <modelConfig> = path to file with model name, number of layers, and layer dimensionality (space-separated)    
@@ -150,7 +151,7 @@ def main():
 
     Options:
         --context=N  The length of a token's entire context window [default: 64]
-        --batch=B  The batch size [default: 64]
+        --batch=B  The batch size [default: 16]
         --localRank=R  For distributed training [default: -1]
     """)
 
@@ -163,6 +164,7 @@ def main():
     with open(args['<modelConfig>'], 'r', encoding='utf-8') as f_in:
         modelConfig = f_in.readline().split()
         modelName, nLayers, nDims = modelConfig[0], int(modelConfig[1]), int(modelConfig[2])
+        print(modelName, nLayers, nDims)
 
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s')
     logging.info(__file__.upper())
@@ -209,6 +211,7 @@ def main():
             #     targets.append(target)
     print('=' * 80)
     print('targets:', targets)
+    print(len(targets))
     print('=' * 80)
 
     # Load pretrained model and tokenizer
@@ -218,7 +221,7 @@ def main():
     # Load model and tokenizer
     tokenizer = BertTokenizer.from_pretrained(modelName, never_split=targets)
     model = BertModel.from_pretrained(modelName, output_hidden_states=True)
-
+   
     if localRank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
@@ -227,18 +230,29 @@ def main():
     # Store vocabulary indices of target words
     unk_id = tokenizer.convert_tokens_to_ids('[UNK]')
     targets_ids = [tokenizer.encode(t, add_special_tokens=False) for t in targets]
+    print('targets_ids', targets_ids)
+    print(len(targets_ids))
+    for ids, token in zip(targets_ids,targets):
+        print(ids,token)
+   
     assert len(targets) == len(targets_ids)
     i2w = {}
+    print("previous tokenizer length",len(tokenizer))
     for t, t_id in zip(targets, targets_ids):
-        if len(t_id) > 1 or (len(t_id) == 1 and t_id == unk_id):
+        if len(t_id) > 1 or (len(t_id) == 1 and t_id[0] == unk_id):
             if tokenizer.add_tokens([t]):
-                model.resize_token_embeddings(len(tokenizer))
-                i2w[len(tokenizer) - 1] = t
-            else:
-                logger.error('Word not properly added to tokenizer:', t, tokenizer.tokenize(t))
+                print(f"{t} has been added to tokenizer")
+    print("current tokenizer length", len(tokenizer))
+    model.resize_token_embeddings(len(tokenizer))
+    
+    for t, t_id in zip(targets, targets_ids):
+        if t_id==[100]:
+            i2w[tokenizer.convert_tokens_to_ids(t)]=t        
         else:
             i2w[t_id[0]] = t
-
+    print('i2w', i2w)
+    print(len(i2w))
+   
     # multi-gpu training (should be after apex fp16 initialization)
     if n_gpu > 1:
         model = torch.nn.DataParallel(model)
@@ -262,7 +276,8 @@ def main():
             for tok_id in tokenizer.encode(' '.join(sentence), add_special_tokens=False):
                 if tok_id in target_counter:
                     target_counter[tok_id] += 1
-
+    print('target_counter', target_counter)
+   
     logger.warning('usages: %d' % (sum(list(target_counter.values()))))
 
     # Container for usages
@@ -271,9 +286,12 @@ def main():
         for (target, target_count) in target_counter.items()
     }
 
+    
+
     # Iterate over sentences and collect representations
     nUsages = 0
     curr_idx = {i2w[target]: 0 for target in target_counter}
+   
 
     dataset = ContextsDataset(i2w, sentences, contextSize, tokenizer, nSentences)
     sampler = SequentialSampler(dataset)
@@ -291,24 +309,32 @@ def main():
 
         batch_input_ids = batch_tuple[0].squeeze(1)
         batch_lemmas, batch_spos = batch_tuple[1], batch_tuple[2]
+      
 
         with torch.no_grad():
             if torch.cuda.is_available():
-                batch_input_ids = batch_input_ids.to('cuda')
+                batch_input_ids = batch_input_ids.to('cuda')  #batch_size, max_len, hidden_rep
 
-            outputs = model(batch_input_ids)
+            outputs = model(batch_input_ids) #(last_hidden_states, pooler_layer, all_hidden_states)
+            
 
             if torch.cuda.is_available():
                 hidden_states = [l.detach().cpu().clone().numpy() for l in outputs[2]]
             else:
                 hidden_states = [l.clone().numpy() for l in outputs[2]]
 
-            # store usage tuples in a dictionary: lemma -> (vector, position)
-            for b_id in np.arange(len(batch_input_ids)):
-                lemma = batch_lemmas[b_id]
+            hidden_states=[hidden_states[-(i+1)] for i in range(nLayers)]
 
+            print('hidden state length', len(hidden_states)) 
+            print('hidden state shape', hidden_states[-1].shape)                
+
+            # store usage tuples in a dictionary: lemma -> (vector, position)
+            for b_id in np.arange(len(batch_input_ids)): # from 0-64
+                lemma = batch_lemmas[b_id]
                 layers = [layer[b_id, batch_spos[b_id] + 1, :] for layer in hidden_states]
                 usage_vector = np.concatenate(layers)
+                
+                #print('usage vector', usage_vector.shape)
                 usages[lemma][curr_idx[lemma], :] = usage_vector
 
                 curr_idx[lemma] += 1

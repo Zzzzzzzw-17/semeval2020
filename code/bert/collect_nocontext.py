@@ -234,7 +234,8 @@ def main():
                 hidden_states = [l.detach().cpu().clone().numpy() for l in outputs[2]]
             else:
                 hidden_states = [l.clone().numpy() for l in outputs[2]]
-
+            
+            hidden_states=hidden_states[-1]
             # store usage tuples in a dictionary: lemma -> (vector, position)
             for b_id in np.arange(len(batch_input_ids)):
                 lemma = batch_lemmas[b_id]

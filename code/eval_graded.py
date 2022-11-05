@@ -15,6 +15,7 @@ def get_ys(model_answers, true_answers):
     with open(model_answers, 'r', encoding='utf-8') as f_in:
         for line in f_in:
             lemma, score = line.strip().split('\t')
+            print(lemma,score)
             if score == 'nan':
                 errors += 1
             y_hat_tmp[lemma] = score
@@ -24,6 +25,7 @@ def get_ys(model_answers, true_answers):
     with open(true_answers, 'r', encoding='utf-8') as f_in:
         for line in f_in:
             lemma, score = line.strip().split('\t')
+            print(lemma,score)
             if y_hat_tmp[lemma] != 'nan':
                 y.append(float(score))
                 y_hat.append(float(y_hat_tmp[lemma]))

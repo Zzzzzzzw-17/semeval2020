@@ -40,7 +40,11 @@ if __name__ == '__main__':
         f_out = None
 
     for word in target_words:
-        frequency = np.median([array0[word].shape[0], array1[word].shape[0]])
+        try: 
+            frequency = np.median([array0[word].shape[0], array1[word].shape[0]])
+        except KeyError:
+            print(word)
+            continue
         if array0[word].shape[0] < 3 or array1[word].shape[0] < 3:
             logger.info('{} omitted because of low frequency'.format(word))
             if args.f:
@@ -61,6 +65,7 @@ if __name__ == '__main__':
         elif args.mode == 'mean':
             for m in [vectors0, vectors1]:
                 vector = np.average(m, axis=0)
+                print("here", vector.shape)
                 vectors.append(vector)
         elif args.mode == 'sum':
             for m in [vectors0, vectors1]:

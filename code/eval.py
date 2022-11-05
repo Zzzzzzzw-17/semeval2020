@@ -68,25 +68,25 @@ def main():
         eval.py <modelAnsPath1> <modelAnsPath2> <trueAnsPath1> <trueAnsPath2>
 
     Arguments:
-        <modelAnsPath1> = path to tab-separated answer file for Task 1 (lemma + "\t" + binary score)
+        #<modelAnsPath1> = path to tab-separated answer file for Task 1 (lemma + "\t" + binary score)
         <modelAnsPath2> = path to tab-separated answer file for Task 2 (lemma + "\t" + corr. coeff.)
-        <trueAnsPath1> = path to tab-separated gold answer file for Task 1 (lemma + "\t" + binary score)
+        #<trueAnsPath1> = path to tab-separated gold answer file for Task 1 (lemma + "\t" + binary score)
         <trueAnsPath2> = path to tab-separated gold answer file for Task 2 (lemma + "\t" + corr. coeff.)
 
     """)
 
-    modelAnsPath1 = args['<modelAnsPath1>']
+    #modelAnsPath1 = args['<modelAnsPath1>']
     modelAnsPath2 = args['<modelAnsPath2>']
-    trueAnsPath1 = args['<trueAnsPath1>']
+    #trueAnsPath1 = args['<trueAnsPath1>']
     trueAnsPath2 = args['<trueAnsPath2>']
 
     print(f"Task\tScore\tp-value")
-    if os.path.isfile(modelAnsPath1):
-        acc = eval_task1(modelAnsPath1, trueAnsPath1)
-        print(f"Task 1\t{acc:.3f}\t")
-    else:
-        print('Task 1 predictions not found: %s' %modelAnsPath1)
-        pass
+    #if os.path.isfile(modelAnsPath1):
+    #    acc = eval_task1(modelAnsPath1, trueAnsPath1)
+    #    print(f"Task 1\t{acc:.3f}\t")
+    #else:
+    #    print('Task 1 predictions not found: %s' %modelAnsPath1)
+    #    pass
 
     if os.path.isfile(modelAnsPath2):
         r, p = eval_task2(modelAnsPath2, trueAnsPath2)
