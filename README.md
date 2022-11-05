@@ -2,37 +2,35 @@
 This code accompanies the paper [UiO-UvA at SemEval-2020 Task 1: Contextualised Embeddings for Lexical Semantic Change Detection](https://arxiv.org/abs/2005.00050),
 which describes our participation in SemEval 2020 Task 1: Unsupervised Lexical Semantic Change Detection.
 
-##  Extraction of contextualized token embeddings
+Data can be stored here: https://drive.google.com/drive/folders/1htrD_T5IVkOcF2kq-fOqZOIlhaWXP6I_?usp=sharing
 
-For ELMo: `python3 code/elmo/extract_elmo.py --input <CORPUS> --elmo <ELMO_MODEL> --outfile <OUTFILE> --vocab <TARGET_WORDS>`
+
+
+##  Extraction of contextualized token embeddings without adapter(s)
 
 For BERT: `python3 code/bert/collect.py <PATH_TO_MODEL> <CORPUS> <TARGET_WORDS> <OUTFILE>`
 
 These scripts produce `npz` archives containing numpy arrays with token embeddings for each target word in a given corpus.
 
+To run:  `python code/bert/collect.py  code/bert/model_config  ../semeval2020_ulscd_eng/corpus1/token  test_data_truth/target_nopos.txt outuput1`
+
+
+
 ## Estimating semantic change
 - COS algorithm: `python3 code/cosine.py -t <TARGET_WORDS> -i0 corpus0.npz -i1 corpus1.npz > cosine_change.txt`
-
-- APD algorithm: `python3 code/distance.py <TARGET_WORDS> corpus0.npz corpus1.npz apd_change.txt`
-
-- JSD algorithm: `python3 code/jsd.py <TARGET_WORDS> corpus0.npz corpus1.npz jsd_change.txt`
 
 These scripts produce plain text files containing lists of words with their corresponding degree of semantic change between
 *corpus0* and *corpus1*.
 
-## Download pre-trained embeddings
+To run:  `python code/cosine.py --input0=outuput1.npz --input1=outuput2.npz --target=test_data_truth/target_nopos.txt --output=result`
 
-### ELMo
-- [English](http://vectors.nlpl.eu/repository/20/209.zip)
-- [German](http://vectors.nlpl.eu/repository/20/201.zip)
-- [Latin](http://vectors.nlpl.eu/repository/20/203.zip)
-- [Swedish](http://vectors.nlpl.eu/repository/20/202.zip)
 
-### BERT
-- [English](https://huggingface.co/bert-base-uncased)
-- [German](https://huggingface.co/bert-base-german-cased)
-- [Latin](https://huggingface.co/bert-base-multilingual-cased)
-- [Swedish](https://huggingface.co/af-ai-center/bert-large-swedish-uncased)
+### Extraction of contextualized token embeddings with adapter(s)
+`python3 code/bert/adapter_collect.py <ADAPTER CONFIG> <PATH_TO_MODEL> <CORPUS> <TARGET_WORDS> <OUTFILE>`
+
+To run:  `python code/bert/adapter_collect.py code/bert/adapter_config code/bert/model_config ../semeval2020_ulscd_eng/corpus1/token  test_data_truth/target_nopos.txt outuput1`
+
+
 
 ## Authors
 - Andrey Kutuzov (University of Oslo, Norway)
