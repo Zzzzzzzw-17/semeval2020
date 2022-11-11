@@ -664,7 +664,7 @@ def main():
     parser.add_argument("--max_grad_norm", default=1.0, type=float,
                         help="Max gradient norm.")
     parser.add_argument(
-        "--num_train_epochs", default=1.0, type=float,
+        "--num_train_epochs", default=10.0, type=float,
         help="Total number of training epochs to perform."
     )
     parser.add_argument(

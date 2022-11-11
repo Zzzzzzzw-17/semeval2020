@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, SequentialSampler
 from transformers import BertTokenizer, BertModel
 from gensim import utils as gensim_utils
 from transformers.adapters import BertAdapterModel
+import transformers.adapters.composition as ac
 
 logger = logging.getLogger(__name__)
 
@@ -228,9 +229,22 @@ def main():
     tokenizer = BertTokenizer.from_pretrained(modelName, never_split=targets)
     #model = BertModel.from_pretrained(modelName, output_hidden_states=True)
     model = BertAdapterModel.from_pretrained('bert-base-uncased', output_hidden_states=True)
-    adapter_name = model.load_adapter(name_, source=source_)
-    model.active_adapters = adapter_name
+    #adapter_name = model.load_adapter(name_, source=source_)
+    #adapter_name1 = model.load_adapter("AdapterHub/bert-base-uncased-pf-mrpc", source="hf")
+    adapter_name2 = model.load_adapter("AdapterHub/bert-base-uncased-pf-conll2003", source="hf")
+    #adapter_name3 = model.load_adapter("AdapterHub/bert-base-uncased-pf-conll2003_pos", source="hf")
+    adapter_name4 = model.load_adapter("AdapterHub/bert-base-uncased-pf-conll2000", source="hf")
 
+    #model.active_adapters = adapter_name
+    
+
+    #model.add_adapter("a")
+    #model.add_adapter("b")
+    #model.add_adapter("c")
+
+    model.active_adapters = ac.Stack(adapter_name2,adapter_name4)
+    print("===================================================================")
+    print("done loading two adapters")
 
     if localRank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
@@ -325,7 +339,7 @@ def main():
         with torch.no_grad():
             if torch.cuda.is_available():
                 batch_input_ids = batch_input_ids.to('cuda')  #(batch_size, 64)
-            print(batch_input_ids.shape)
+            #print(batch_input_ids.shape)
             outputs = model(batch_input_ids)  # （logits,hidden_states）
 
 
@@ -338,8 +352,8 @@ def main():
             # hidden_states=[hidden_states[-1]]
             hidden_states=[hidden_states[-(i+1)] for i in range(nLayers)]
 
-            print('hidden state length', len(hidden_states)) 
-            print('hidden state shape', hidden_states[-1].shape) 
+            #print('hidden state length', len(hidden_states)) 
+            #print('hidden state shape', hidden_states[-1].shape) 
 
             # store usage tuples in a dictionary: lemma -> (vector, position)
             for b_id in np.arange(len(batch_input_ids)): # from 0-64

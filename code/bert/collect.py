@@ -325,8 +325,8 @@ def main():
 
             hidden_states=[hidden_states[-(i+1)] for i in range(nLayers)]
 
-            print('hidden state length', len(hidden_states)) 
-            print('hidden state shape', hidden_states[-1].shape)                
+            #print('hidden state length', len(hidden_states)) 
+            #print('hidden state shape', hidden_states[-1].shape)                
 
             # store usage tuples in a dictionary: lemma -> (vector, position)
             for b_id in np.arange(len(batch_input_ids)): # from 0-64
